@@ -1,0 +1,7 @@
+{
+  "id": "local-storage",
+  "name": "Notebook local storage module",
+  "version": "0.0.1",
+
+  "providesStorage": true
+}
