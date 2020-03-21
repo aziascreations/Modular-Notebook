@@ -5,47 +5,46 @@ import com.azias.commons.addons.AddonLoader;
 import com.azias.commons.addons.AddonLoaderException;
 import com.azias.notebook.addons.events.AddonClassGenericEvent;
 import com.azias.notebook.addons.tasks.AddonClassDiscoveryTask;
-import com.azias.storage.IDataStorage;
-import com.azias.notebook.modules.localstorage.storages.LocalStorageAdapter;
+import com.azias.notebook.addons.tasks.AddonClassMethodCallerTask;
+import com.azias.notebook.interactors.InteractorManager;
 import com.azias.storage.StorageManager;
+
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.UUID;
 
 public class Notebook {
 	private final static Logger logger = LoggerFactory.getLogger(Notebook.class);
 	
-	private String stuff;
+	private CommandLine launchArgs;
+	
+	private AddonLoader addonLoader;
+	private StorageManager storageManager;
+	// TODO: Make an event based system ???
+	private InteractorManager interactorManager;
+	
 	private long lastUpdateMillis;
 	
-	private CommandLine launchArgs;
-	private AddonLoader addonLoader;
-	
-	private StorageManager storageManager;
-	
-	public Notebook(CommandLine launchArgs) {
+	public Notebook(CommandLine launchArgs) throws NotebookException {
+		logger.debug("Instantiating Notebook...");
 		this.launchArgs = launchArgs;
 		
 		logger.debug("Instantiating the AddonLoader...");
-		
 		if(!launchArgs.hasOption("addons")) {
-			logger.error("The addons argument isn't set.");
-			logger.info("Please use \"--help\" to see the help.");
-			System.exit(-1);
-			
-			// TODO: Remove this !!!!!
+			logger.trace("The addons argument isn't set, throwing exception !");
+			throw new NotebookException("Addons argument not set !", NotebookException.ErrorCode.ERROR_NO_ADDONS_IN_PARAMETERS);
 		} else {
 			addonLoader = new AddonLoader(launchArgs.getOptionValue("addons").split(";"));
 		}
+		
+		storageManager = new StorageManager();
+		interactorManager = new InteractorManager();
 	}
 	
 	public void initialize(boolean executeAddonLoader) {
 		logger.info("Initializing the Notebook...");
-		// TODO: IDK ???
 		
 		logger.debug("Initializing the AddonLoader in Notebook...");
 		try {
@@ -60,7 +59,7 @@ public class Notebook {
 			System.exit(-1);
 		}
 		
-		// TODO: Do shit.
+		// TODO: Don't exit the program, just shit out an exception.
 		
 		logger.debug("Preparing tasks for the AddonLoader...");
 		
@@ -68,7 +67,15 @@ public class Notebook {
 		AddonClassGenericEvent genericClassEvent = new AddonClassGenericEvent();
 		AddonClassDiscoveryTask classDiscoveryTask = new AddonClassDiscoveryTask(genericClassEvent, Addon.class);
 		
+		// Provide multiple interfaces for the addon classes so they can be differentiated based on that.
+		AddonClassMethodCallerTask classCallerTask1 = new AddonClassMethodCallerTask("initialize", genericClassEvent);
+		AddonClassMethodCallerTask classCallerTask2 = new AddonClassMethodCallerTask("registerStorageMediums", genericClassEvent);
+		AddonClassMethodCallerTask classCallerTask3 = new AddonClassMethodCallerTask("registerInteractors", genericClassEvent);
+		
 		addonLoader.addTask(this, classDiscoveryTask);
+		addonLoader.addTask(this, classCallerTask1);
+		addonLoader.addTask(this, classCallerTask2);
+		addonLoader.addTask(this, classCallerTask3);
 		
 		if(executeAddonLoader) {
 			try {
@@ -86,26 +93,21 @@ public class Notebook {
 		
 		logger.debug("Setting up testing data storage medium.");
 		
-		storageManager = new StorageManager();
-		storageManager.addStorage(new LocalStorageAdapter("./data/test01/"));
+		logger.debug("There are currently {} storage adapter(s) registered !", storageManager.getDataStorages().size());
 		
 		if(storageManager.initialize()) {
-			logger.debug("storageManager seems to have initialized successfully !");
+			logger.trace("storageManager seems to have initialized successfully !");
 		} else {
-			logger.debug("storageManager seems to have failed to initialize !");
+			logger.trace("storageManager seems to have failed to initialize !");
 		}
 		
-		/*if(storageManager.hasfile(UUID.fromString("f88ed4ed-b470-4c7b-b5d1-29549e2fb82d"))) {
-			logger.debug("UUID found !");
-		} else {
-			logger.debug("UUID not found !");
-		}
+		logger.debug("There are currently {} interactor(s) registered !", interactorManager.getInteractors().size());
 		
-		if(storageManager.hasfile(UUID.fromString("f88ed4ed-b470-4c7b-b5d1-29549e2fb83d"))) {
-			logger.debug("UUID found !");
+		if(interactorManager.initialize()) {
+			logger.trace("interactorManager seems to have initialized successfully !");
 		} else {
-			logger.debug("UUID not found !");
-		}/**/
+			logger.trace("interactorManager seems to have failed to initialize !");
+		}
 		
 		logger.debug("Notebook successfully initialized !");
 		logger.debug("Giving back control to parent class.");
@@ -114,13 +116,29 @@ public class Notebook {
 	public boolean update() {
 		lastUpdateMillis = System.currentTimeMillis();
 		
+		boolean isRunning = interactorManager.update(this, lastUpdateMillis);
+		
+		if(isRunning) {
+			// Do more shit...
+		}
+		
 		return true;
+		//return !isRunning;
 	}
 	
 	public void finish() {
 		logger.debug("Notebook's finish() function was called !");
+		interactorManager.finish();
 	}
 	
 	
+	/* Getters & Setters */
 	
+	public StorageManager getStorageManager() {
+		return storageManager;
+	}
+	
+	public InteractorManager getInteractorManager() {
+		return interactorManager;
+	}
 }

@@ -18,9 +18,11 @@ public interface IDataStorage {
 	
 	boolean hasFile(UUID fileUUID);
 	
+	//boolean close(); // finalize
+	
 	// Could potentially be moved into other interfaces.
-	boolean canSupplyFile();
-	boolean canStoreFile();
+	boolean canSupplyFiles();
+	boolean canStoreFiles();
 	
 	boolean supportsSynchronisation();
 	

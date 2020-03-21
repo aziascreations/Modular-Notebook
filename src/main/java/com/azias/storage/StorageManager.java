@@ -12,6 +12,7 @@ public class StorageManager {
 	private ArrayList<IDataStorage> dataStorages;
 	
 	public StorageManager() {
+		logger.trace("Instantiating {}...", this.getClass().getSimpleName());
 		dataStorages = new ArrayList<>();
 	}
 	
@@ -49,5 +50,9 @@ public class StorageManager {
 					this.getClass().getSimpleName());
 			return false;
 		}
+	}
+	
+	public ArrayList<IDataStorage> getDataStorages() {
+		return dataStorages;
 	}
 }

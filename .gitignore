@@ -93,5 +93,7 @@ gradle-app.setting
 
 
 # Personnal stuff
-
 logs/
+data/storage
+
+.idea/discord.xml

@@ -76,7 +76,7 @@ public class LocalStorageAdapter implements IDataStorage {
 		
 		if(!metaFile.exists()) {
 			HashMap<String, Object> metaFields = new HashMap<>();
-			metaFields.put("schemeVersion", "1.0.0");
+			metaFields.put("schemeVersion", storageSchemeVersion.toString());
 			
 			// Can't be changed right now.
 			//metaFields.put("indexFile", "./storage-index.json");
@@ -174,12 +174,12 @@ public class LocalStorageAdapter implements IDataStorage {
 	}
 	
 	@Override
-	public boolean canSupplyFile() {
+	public boolean canSupplyFiles() {
 		return true;
 	}
 	
 	@Override
-	public boolean canStoreFile() {
+	public boolean canStoreFiles() {
 		return false;
 	}
 	
